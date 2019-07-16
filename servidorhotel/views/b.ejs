@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<title><%- t2 %></title>
+<% include head %>
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+<header>
+<% include header %>
+</header>
+<main>
+<section>
+<form class="col s12">
+<div class="row">
+        <div class="input-field col s6">
+          <input id="dni" type="text" class="validate" ng-model="dni">
+          <label for="dni">DNI</label>
+        </div>
+      </div>
+	<button ng-click="buscaReserva()"  class="waves-effect waves-light btn-small">buscar</button>
+</form>
+  <div  ng-if="mdatos != null ">
+    <div class="col s12 m12">
+      <div class="card">
+        <div class="card-content">
+         <ul  ng-repeat="x in mdatos">
+  <li>Cliente: {{x.cliente}}</li>
+  <li>Nombre: {{x.nombreCompleto}}</li>
+  <li>Desde: {{x.fechaInicio}}</li>
+  <li>Hasta {{x.fechaFin}}</li>
+  <li style="text-decoration:underline" ng-click="listaHabitaciones(x.codigo, $index)">Ver habitaciones</li>
+  <li ng-if="x.estado == 0">Estado: No está hospedado <button ng-click="checkInn(x.codigo)" class="btn-flat">Procesar ahora</button></li>
+  <li ng-if="x.estado == 1">Estado: En hospedaje</li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+</section>
+<div >
+ <table>
+    <thead>
+      <tr ng-if="mdatos != null ">
+        <td>Habitación N°</td><td>Tipo</td><td>Precio</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="x in hab">
+        <td>{{x.numHabitacion}}</td><td>{{x.nombre}}</td><td>{{x.precio}}</td>
+        <td ng-if="estadoActual == 0" ><input type="text" class="ch" placeholder="Un nombre"></td>
+        <td ng-if="estadoActual == 0"><button class="btn-floating" ng-click="agregar(reservaActual, x.numHabitacion, $index)"><i class="material-icons">add</i></button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!--
+  <div class="row">
+    <div class="col s12 m6">
+      <div class="card" ng-repeat="x in hab">
+        <div class="card-content">
+        <h6>Habitación {{x.numHabitacion}}</h6>
+        <p>{{x.nombre}}</p>
+        <p><input type="text" class="ch"></p>
+        <a class="btn-floating halfway-fab waves-effect waves-light red"><i class="material-icons">add</i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+-->
+<button ng-if="estadoActual == 0" class="waves-effect waves-light btn-small" ng-click="go()">Procesar</button>
+</div>
+</main>
+</body>
+<script>
+
+window.csrf_token = "{{ csrf_token }}";
+
+
+var app = angular.module("myApp", []);
+
+app.controller("myCtrl", function($scope, $http) {
+ 
+  $scope.buscaReserva = function(){
+    $http({
+      method: 'POST',
+      url: 'api/verReservaPorDni', 
+      data: { dni: $scope.dni }
+      }).then(function (response) {
+      	$scope.mdatos = response.data[0];
+        if($scope.mdatos == ''){
+          $scope.hab = [];
+        alert("No hay reserva");
+        return;
+      }
+      $scope.hab = [];
+        //var resv = $scope.mdatos[0].codigo;
+        //$scope.listaHabitaciones(resv);
+    }, function (error) {
+    });
+  }
+
+  $scope.listaHabitaciones = function(resv,i){
+    $http({
+      method: 'POST',
+      url: 'api/listarHabitacionesPorReserva2', 
+      data: { res: resv }
+      }).then(function (response) {
+      	$scope.hab = response.data[0];
+        $scope.estadoActual = $scope.mdatos[i].estado;
+        $scope.reservaActual = $scope.mdatos[i].codigo;
+    }, function (error) {
+    });
+    
+  }
+
+   $scope.go = function(){
+    $scope.checkIn($scope.reservaActual);
+    //$scope.checkInDetalle();
+    for(var i =0; i<$scope.arrHab.length; i++){
+      $scope.checkInDetalle($scope.arrHab[i].habitacion,$scope.arrHab[i].descripcion,$scope.reservaActual);
+    }
+    location.reload();
+
+}
+  $scope.arrHab = [];
+  $scope.agregar = function(res, hab, i){
+    var ch = document.querySelectorAll(".ch");
+    //arreglo detalle hospedaje
+    $scope.arrHab.push({
+      "reserva" : res,
+      "habitacion" : hab,
+      "descripcion" : ch[i].value
+    });
+    console.log($scope.arrHab);
+  }
+
+  $scope.checkIn = function(x){
+    $http({
+      method: 'POST',
+      url: 'api/checkIn', 
+      data: { res: x }
+      }).then(function (response) {
+    }, function (error) {
+    });
+
+  }
+  $scope.checkInDetalle = function(a,b,c){
+   $http({
+      method: 'POST',
+      url: 'api/checkInDetalle', 
+      data:  { hab: a ,des: b, res: c }
+      //data:  { resv: 'R000001' ,desde: $scope.desde, hasta: $scope.hasta, tipo: $scope.arrHab[0].tipo, cantidad: $scope.arrHab[0].cantidad }
+      }).then(function (response) {
+    }, function (error) {
+    });
+    
+  }
+
+  $scope.checkInn = function(x){
+    $http({
+      method: 'POST',
+      url: 'api/checkInn', 
+      data: { res: x }
+      }).then(function (response) {
+    }, function (error) {
+    });
+      location.reload();
+
+  }
+});
+
+
+/*
+$scope.go = function(){
+  for(var i; i<arrHab.length; i++){
+    $scope.reservaHabitacion($scope.desde,$scope.hasta,$scope.arrHab[i].tipo,scope.arrHab[i].cantidad);
+  }
+}
+*/
+
+</script>
+<style>
+main{
+  padding: 1em;
+}
+main{
+}
+section{
+}
+section form{
+  width: 300px;
+}
+.card{
+  width: 100%;
+}
+@media only screen and (min-width: 600px) {
+  section{
+  display: flex !important;
+  
+  }
+  .card{
+  width: 300px;
+}
+}
+</style>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="iso-8859-1">
+<meta name="description" content="Ejemplo de HTML5">
+<meta name="keywords" content="HTML5, CSS3, JavaScript">
+<title></title>
+<!-- Compiled and minified CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+<header>
+<nav></nav>
+</header>
+<main>
+
+<form class="col s12">
+<div class="row">
+        <div class="input-field col s6">
+          <input id="desde" type="text" class="validate" ng-model="desde">
+          <label for="desde">Desde</label>
+        </div>
+        <div class="input-field col s6">
+          <input id="hasta" type="text" class="validate" ng-model="hasta">
+          <label for="hasta">Hasta</label>
+        </div>
+      </div>
+	<button ng-click="buscarAuto()"  class="waves-effect waves-light btn-small">buscar</button>
+</form>
+
+	<table>
+  <thead>
+    <tr ng-if="mdatos != null">
+      <td>Tipo</td><td>Precio</td><td>Cantidad</td>
+    </tr>
+  </thead>
+		<tbody>
+      <tr ng-repeat="x in mdatos">
+       <td>{{x.nombre}}</td><td>{{x.precio}}</td><td><input type="number" name="" value="{{x.nHabitaciones}}" class="ch"></td><td><button class="btn-floating" ng-click="agregar(x.nombre, $index)"><i class="material-icons">import_export</i></button></td>
+      </tr>  
+    </tbody>
+	</table>
+
+  
+<form class="col s12">
+  <div class="row">
+        <div class="input-field col s6">
+          <input id="dni" type="text" class="validate" ng-model="dni">
+          <label for="dni">DNI</label>
+        </div>
+    </div>
+        <div class="row">
+        <div class="input-field col s6">
+          <input id="nombre" type="text" class="validate" ng-model="nombre">
+          <label for="nombre">Nombre</label>
+        </div>
+        </div>
+     
+  <button ng-click="go()"  class="waves-effect waves-light btn-small">Reservar</button>
+</form>
+ 
+</main>
+<aside>
+<div>
+<p>Habitaciones seleccionadas</p>
+  <table>
+    <tbody>
+      <tr ng-repeat="x in arrHab">
+        <td>{{x.tipo}}</td><td>{{x.cantidad}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+  </aside>
+</body>
+<script>
+
+window.csrf_token = "{{ csrf_token }}";
+
+
+var app = angular.module("myApp", []);
+
+app.controller("myCtrl", function($scope, $http) {
+ 
+  $scope.buscarAuto = function(){
+    $http({
+      method: 'GET',
+      url: "api/buscaHabitaciones/"+$scope.desde+"&"+$scope.hasta
+    }).then(function(response) {
+      $scope.mdatos = response.data[0];
+      if($scope.mdatos == ''){
+        alert("No hay habitaciones");
+      }
+    });
+
+  }
+
+  $scope.arrHab = [];
+  $scope.agregar = function(tipoH, i){
+    var ch = document.querySelectorAll(".ch");
+    
+    $scope.arrHab.push({
+      "tipo" : tipoH,
+      "cantidad" : ch[i].value,
+      "desde" : $scope.desde,
+      "hasta" : $scope.hasta
+    });
+    //alert(JSON.stringify($scope.arrHab));
+  }
+
+  $scope.go = function(){
+    $scope.creaReserva();
+    //$scope.reservaHabitacion();  
+    // $scope.reservaHabitacion('R000001',$scope.desde,$scope.hasta,$scope.arrHab[0].tipo,scope.arrHab[0].cantidad); 
+    for(var i =0; i<$scope.arrHab.length; i++){
+     // console.log($scope.arrHab[i]);
+     $scope.reservaHabitacion($scope.dni,$scope.desde,$scope.hasta,$scope.arrHab[i].tipo,$scope.arrHab[i].cantidad);
+   // $scope.reservaHabitacion('R000001',$scope.desde,$scope.hasta,$scope.arrHab[i].tipo,scope.arrHab[i].cantidad);
+  }
+
+  }
+  $scope.creaReserva = function(){
+    $http({
+      method: 'POST',
+      url: 'api/creaReserva', 
+      data: { desde: $scope.desde, hasta: $scope.hasta, dni: $scope.dni, nombre: $scope.nombre }
+      }).then(function (response) {
+    }, function (error) {
+    });
+    
+  }
+
+  $scope.reservaHabitacion = function(a,b,c,d,e){
+   $http({
+      method: 'POST',
+      url: 'api/reservaHabitacion', 
+      data:  { pdni: a ,desde: b, hasta: c, tipo: d, cantidad: e }
+      //data:  { resv: 'R000001' ,desde: $scope.desde, hasta: $scope.hasta, tipo: $scope.arrHab[0].tipo, cantidad: $scope.arrHab[0].cantidad }
+      }).then(function (response) {
+    }, function (error) {
+    });
+    
+  }
+});
+
+
+/*
+$scope.go = function(){
+  for(var i; i<arrHab.length; i++){
+    $scope.reservaHabitacion($scope.desde,$scope.hasta,$scope.arrHab[i].tipo,scope.arrHab[i].cantidad);
+  }
+}
+*/
+
+</script>
+<style type="text/css">
+body{
+  display: flex;
+  flex-flow: wrap;
+}
+header{
+  width: 100%;
+}
+main{
+  width: 70%;
+  padding: 1em;
+}
+  aside{
+  width: 30%;
+}
+aside>div{
+  position: fixed;
+}
+nav{
+background: rgba(255,255,255,0);
+}
+</style>
+</html>

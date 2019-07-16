@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+
+  <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+         
+<body>
+
+<div ng-app="myApp" ng-controller="myCtrl" ng-init="mostrar()"> 
+
+<div class="row left">
+ <form class="col s12" name="myForm" novalidate>
+				<h6>Registrar</h6>
+				<div class="row">
+				<div class="input-field col s12">
+				  <input id="first_name" type="email" class="validate" ng-model="usu" name="usu" required>
+				  <label for="first_name">Correo</label>
+				  <span style="color:red" ng-show="myForm.usu.$dirty && myForm.usu.$invalid">
+				<span ng-show="myForm.usu.$error.required">Campo requerido</span>
+				<span ng-show="myForm.usu.$error.email">Error en formato email</span>
+				</span>
+				</div>
+				<div class="input-field col s12">
+				  <input id="last_name" type="password" class="validate" ng-model="pass" name="pass" required>
+				  <label for="last_name">Clave</label>
+				  <span style="color:red" ng-show="myForm.pass.$dirty && myForm.pass.$invalid">
+				<span ng-show="myForm.pass.$error.required">Campo requerido</span>
+				</span>
+				</div>
+			  </div>
+			   <button class="btn waves-effect waves-light" type="submit" ng-click="registrar()" 
+			   ng-disabled="myForm.usu.$dirty && myForm.usu.$invalid || myForm.pass.$dirty && myForm.pass.$invalid"
+			   >Enviar
+		  </button>
+		  <p id="resultado"></p>
+		</form>
+</div>
+
+ <table>
+        <thead>
+          <tr>
+              <th>Correo</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr ng-repeat="x in myWelcome">
+            <td>{{ x.correo }}</td>
+			<td><a class="waves-effect waves-light btn-small modal-trigger sin" href="#modal1">Actualizar</a></td>
+			<td><a class="waves-effect waves-light btn-small">Eliminar</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+
+</div>
+
+<!-- Modal Trigger -->
+
+  <!-- Modal Structure -->
+  <div id="modal1" class="modal">
+    <div class="modal-content">
+			  <form class="col s12">
+				<h6 class="center">Actualizar</h6>
+				<div class="column">
+				<div class="input-field col s12">
+				  <input id="first_name" type="text" class="validate">
+				  <label for="first_name">Correo</label>
+				</div>
+				<div class="input-field col s12">
+				  <input id="last_name" type="password" class="validate">
+				  <label for="last_name">Clave</label>
+				</div>
+			  </div>
+			   <button class="btn waves-effect waves-light" type="submit" name="action">Enviar
+		  </button>
+		</form>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class="modal-close waves-effect waves-green btn-flat">Cerrar</a>
+    </div>
+  </div>
+  
+ <!-- Modal Trigger -->
+ 
+    
+          
+
+<style>
+@media (min-width: 600px) {
+	.seis{
+		width:420px;
+	}
+}
+@media (max-width: 320px) {
+	.sin{
+		
+	}
+}
+</style>
+<script>
+  $(document).ready(function(){
+    $('.modal').modal();
+  });
+
+
+var app = angular.module('myApp', []);
+app.controller('myCtrl', function($scope, $http) {
+ 
+  $scope.mostrar = function(){
+	$http({
+    method : "GET",
+    url : "api/usuarios"
+  }).then(function mySuccess(response) {
+      $scope.myWelcome = response.data;
+    }, function myError(response) {
+      $scope.myWelcome = response.statusText;
+  });
+  }
+  $scope.registrar = function(){
+		var parametros = {
+                "clave" : $scope.pass,
+                "correo" : $scope.usu,
+        };
+		$http({
+			method: 'POST',
+			url: 'api/usuarios', 
+			data: parametros
+			}).then(function (response) {
+			$scope.mostrar();
+		}, function (error) {
+		});
+		
+	}
+
+});
+</script>
+<script>
+/*
+function registrar(){
+        var parametros = {
+                "correo" : $("#first_name").val(),
+                "clave" : $("#last_name").val(),
+        };
+        $.ajax({
+                data:  parametros, //datos que se envian a traves de ajax
+                url:   'api/usuarios', //archivo que recibe la peticion
+                type:  'post', //mtodo de envio
+                beforeSend: function () {
+                        $("#resultado").html("Procesando, espere por favor...");
+                },
+                success:  function (response) { //una vez que el archivo recibe el request lo procesa y lo devuelve
+                        $("#resultado").html(response);
+                }
+        });
+}
+
+*/
+</script>
+</body>
+</html>

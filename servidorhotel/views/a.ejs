@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<title><%- t1 %></title>
+<% include head %>
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+<header>
+<% include header %>
+</header>
+<main>
+
+<section class="col s12" id="frmBuscar">
+                    
+<div class="row">
+        <div class=" col s6 col-lg-6">
+        <label for="desde">Desde</label>
+          <input id="desde" type="text" name="desde" class="validate" ng-model="desde">
+          
+          
+        </div>
+        <div class=" col s6 col-lg-6">
+        <label for="hasta">Hasta</label>
+          <input id="hasta" type="text" class="validate" ng-model="hasta" name="hasta">
+          
+        </div>
+      </div>
+  <button ng-click="buscarAuto()" type="submit" class="waves-effect waves-light btn-small">buscar</button>
+</section>
+
+  <table>
+  <thead>
+    <tr ng-if="mdatos != null || mdatos != ''">
+      <td>Tipo</td><td>Precio</td><td>Cantidad</td>
+    </tr>
+  </thead>
+    <tbody>
+      <tr ng-repeat="x in mdatos">
+       <td>{{x.nombre}}</td><td>{{x.precio}}</td><td><input type="number" name="" value="{{x.nHabitaciones}}" min="0" max="{{x.nHabitaciones}}" class="ch"></td><td><button class="btn-floating" ng-click="agregar(x.precio,x.nombre, $index)"><i class="material-icons">import_export</i></button></td>
+      </tr>  
+    </tbody>
+  </table>
+</main>
+<aside>
+<div ng-if="mdatos != null || mdatos != ''">
+<p>Habitaciones seleccionadas</p>
+  <table>
+  <thead>
+      <tr>
+        <td>Tipo</td><td>Cantidad</td><td>Precio</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="x in arrHab">
+        <td>{{x.tipo}}</td><td>{{x.cantidad}}</td><td>{{x.precio}}</td>
+      </tr>
+       <tr>
+        <td></td><td></td><td>Total: {{total}}
+ <button data-target="modal1" class="modal-trigger waves-effect waves-green btn-flat" ng-if="total > 0">Reservar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <!-- Modal Trigger modalreservar-->
+</div>
+  </aside>
+
+
+
+  <!-- Modal Structure 'modalreservar' -->
+  <div id="modal1" class="modal">
+    <div class="modal-content">
+    <h4>Reservar</h4>
+     <section class="" id="frmRes">
+  <div class="row">
+        <div class=" col-lg-6">
+        <label for="dni">DNI</label>
+          <input id="dni" type="text" class="validate" ng-model="dni" name="dni">
+          
+
+        </div>
+    </div>
+        <div class="row">
+        <div class=" col-lg-6">
+        <label for="nombre">Nombre</label>
+          <input id="nombre" type="text" name="nombre" class="validate" ng-model="nombre">
+          
+        </div>
+        </div>
+     
+  <button ng-click="go()" type="submit" class="waves-effect waves-light btn-small">Reservar</button>
+</section>
+    </div>
+    <div class="modal-footer">
+      <button data-target="modal1" class="modal-close waves-effect waves-green btn-flat">Cerrar</button>
+    </div>
+  </div>
+</body>
+<script>
+//
+  var d = new Date();
+  var h = d.getMonth();
+  var anno = d.getFullYear();
+  var dia = d.getDate();
+  var mes = parseInt(h) + parseInt(1)
+
+  var dia_s;
+  var mes_s;
+  if(dia <= 9){
+    dia_s = "0"+dia;
+  }
+  else{
+	dia_s = dia;
+  }
+  if(mes <= 9){
+    mes_s = "0"+mes;
+  }else{
+	 mes_s = mes;
+  }
+
+  var fecha2 =  anno+"-"+mes_s+"-"+dia_s;
+
+//
+window.csrf_token = "{{ csrf_token }}";
+
+app = angular.module("myApp", []);
+
+app.controller("myCtrl", function($scope, $http) {
+ $scope.desde = fecha2;
+ $scope.hasta = fecha2;;
+
+  $http.get("api/buscaHabitaciones/"+$scope.desde+"&"+$scope.hasta)
+  .then(function(response) {
+      $scope.mdatos = response.data[0];
+      if($scope.mdatos == ''){
+        alert("No hay habitaciones");
+      }
+  });
+
+  $scope.buscarAuto = function(){
+   $scope.arrHab = [];
+   $scope.total = 0;
+    if($scope.desde == null){
+      alert("Campo Desde vacío (yyyy-mm-dd)");
+      return;
+    }
+    if($scope.hasta == null){
+      alert("Campo Hasta vacío (yyyy-mm-dd)");
+      return;
+    }
+    $http({
+      method: 'GET',
+      url: "api/buscaHabitaciones/"+$scope.desde+"&"+$scope.hasta
+    }).then(function(response) {
+      $scope.mdatos = response.data[0];
+      if($scope.mdatos == ''){
+        alert("No hay habitaciones");
+      }
+    });
+
+  }
+
+  $scope.arrHab = [];
+  $scope.total = 0;
+  $scope.agregar = function(precio, tipoH, i){ 
+    var ch = document.querySelectorAll(".ch");
+    
+    $scope.arrHab.push({
+      "tipo" : tipoH,
+      "precio" : precio * parseInt(ch[i].value),
+      "cantidad" : ch[i].value,
+      "desde" : $scope.desde,
+      "hasta" : $scope.hasta
+    });
+    //alert(JSON.stringify($scope.arrHab));
+    for(var i = 0; i<$scope.arrHab.length; i++){
+        var num = $scope.arrHab[i].precio;
+      } 
+      $scope.total = $scope.total + parseInt(num);
+      //console.log( total);
+  }
+
+  $scope.go = function(){
+    var dni = document.querySelector("#dni").value;
+    if($scope.arrHab == ''){
+        alert("No hay habitaciones seleccionadas");
+        return;
+      }
+    if($scope.dni == null){
+      alert("DNI es obligatorio");
+      return;
+    }
+    if($scope.nombre == null){
+      alert("Nombre es obligatorio");
+      return;
+    }
+    if($scope.desde == null || $scope.hasta == null){
+      alert("Fechas son campos obligatorios");
+      return;
+      }
+    if(dni.length != 8){
+      alert("DNI Incorrecto");
+      return;
+    }
+    $scope.creaReserva();
+    //$scope.reservaHabitacion();  
+    // $scope.reservaHabitacion('R000001',$scope.desde,$scope.hasta,$scope.arrHab[0].tipo,scope.arrHab[0].cantidad); 
+    for(var i =0; i<$scope.arrHab.length; i++){
+     // console.log($scope.arrHab[i]);
+     $scope.reservaHabitacion($scope.dni,$scope.desde,$scope.hasta,$scope.arrHab[i].tipo,$scope.arrHab[i].cantidad);
+   // $scope.reservaHabitacion('R000001',$scope.desde,$scope.hasta,$scope.arrHab[i].tipo,scope.arrHab[i].cantidad);
+  }
+  location.reload();
+  }
+  $scope.creaReserva = function(){
+    $http({
+      method: 'POST',
+      url: 'api/creaReserva', 
+      data: { desde: $scope.desde, hasta: $scope.hasta, dni: $scope.dni, nombre: $scope.nombre }
+      }).then(function (response) {
+    }, function (error) {
+    });
+    
+  }
+
+  $scope.reservaHabitacion = function(a,b,c,d,e){
+   $http({
+      method: 'POST',
+      url: 'api/reservaHabitacion', 
+      data:  { pdni: a ,desde: b, hasta: c, tipo: d, cantidad: e }
+      //data:  { resv: 'R000001' ,desde: $scope.desde, hasta: $scope.hasta, tipo: $scope.arrHab[0].tipo, cantidad: $scope.arrHab[0].cantidad }
+      }).then(function (response) {
+    }, function (error) {
+    });
+    
+  }
+});
+
+
+/*
+$scope.go = function(){
+  for(var i; i<arrHab.length; i++){
+    $scope.reservaHabitacion($scope.desde,$scope.hasta,$scope.arrHab[i].tipo,scope.arrHab[i].cantidad);
+  }
+}
+*/
+
+document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.modal');
+    var instances = M.Modal.init(elems, "");
+  });
+</script>
+<style type="text/css">
+body{
+  display: flex;
+  flex-flow: wrap;
+}
+header{
+  width: 100%;
+}
+main{
+  width: 70%;
+  padding: 1em;
+}
+  aside{
+  width: 30%;
+}
+aside>div{
+  position: fixed;
+}
+.col-lg-6 h2{
+  color:red;
+}
+</style>
+<script>
+
+/*
+//("((19|20)\\d\\d)-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])")
+$(document).ready(function(){
+  igualdad("#desde","[0-9]","Error");
+  igualdad("#hasta","hasta","Error");
+  igualdad("#dni","dni","Error");
+  igualdad("#nombre","nombre","Error");
+});
+
+function igualdad(componente, condicion, texto){
+  var str = $(componente).val();
+  var patt = new RegExp(condicion);
+  var res = patt.test(str);
+  $(componente).keyup(function(){
+    if(res){
+      $(componente+"~span").text("");
+    }else{      
+      $(componente+"~span").text(res);
+    }
+  });
+}
+*/
+$(document).ready(function() {
+    $('#frmBuscar').bootstrapValidator({
+    
+
+        message: 'This value is not valid',
+        feedbackIcons: {
+            valid: 'glyphicon glyphicon-ok',
+            invalid: 'glyphicon glyphicon-remove',
+            validating: 'glyphicon glyphicon-refresh'
+        },
+        fields: {
+            desde: {
+                validators: {
+                   notEmpty: {
+                        message: 'Campo vacío'
+                    },
+                    regexp: {
+                        regexp: "((19|20)\\d\\d)-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])",
+                        message: 'Formato de fecha yyyy-mm-dd'
+                    }
+                }
+            },
+            hasta: {
+                validators: {
+                   notEmpty: {
+                        message: 'Campo vacío'
+                    },
+                    regexp: {
+                        regexp: "((19|20)\\d\\d)-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])",
+                        message: 'Formato de fecha yyyy-mm-dd'
+                    }
+                }
+            }
+           
+        }
+    });
+
+$('#frmRes').bootstrapValidator({
+        message: 'This value is not valid',
+        feedbackIcons: {
+            valid: 'glyphicon glyphicon-ok',
+            invalid: 'glyphicon glyphicon-remove',
+            validating: 'glyphicon glyphicon-refresh'
+        },
+        fields: {
+            nombre: {
+                message: 'Nombre no validado',
+                validators: {
+                    notEmpty: {
+                        message: 'Campo vacío'
+                    },
+                    stringLength: {
+                        min: 3,
+                        max: 45,
+                        message: 'De 3 a 45 carácteres'
+                    },
+                    regexp: {
+                        regexp: /^[a-zA-Z0-9_\.]+$/,
+                        message: ', Carácteres no válidos'
+                    }
+                }
+            },
+          dni: {
+                validators: {
+                   notEmpty: {
+                        message: 'Campo vacío'
+                    },
+                    regexp: {
+                        regexp: /^[0-9]{8}$/,
+                        message: 'DNI es de 8 dígitos'
+                    }
+                }
+            }
+           
+           
+        }
+    });
+});
+</script>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<title><%- t2 %></title>
+<% include head %>
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+<header>
+<% include header %>
+</header>
+<main>
+
+<section>
+<form class="col s12">
+<div class="row">
+        <div class="input-field col s6">
+          <input id="habitacion" type="number" class="validate" ng-model="habitacion">
+          <label for="habitacion">Habitación</label>
+        </div>
+      </div>
+  <button ng-click="buscaHabitacion()"  class="waves-effect waves-light btn-small">buscar</button>
+</form>
+  <div  ng-if="mdatos != null ">
+    <div class="col s12 m12">
+      <div class="card">
+        <div class="card-content">
+         <ul  ng-repeat="x in mdatos">
+  <li>En hospedaje: {{x.descripcion}}</li>
+  <li>Reserva realizada: {{x.nombreCompleto}}</li>
+  <li>Desde: {{x.fechaInicio}}</li>
+  <li>Hasta {{x.fechaFin}}</li>
+  <li>Reserva {{x.codigo}}</li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="galeria">
+  <div class="card" ng-repeat="x in servicios">
+    <div class="card-image waves-effect waves-block waves-light">
+      <img class="activator" src="{{x.id}}.jpg">
+    </div>
+    <div class="card-content">
+      <span class="card-title activator grey-text text-darken-4">{{x.nombre}}<i class="material-icons right">more_vert</i></span>
+      <p>Precio: {{x.precio}}</p>
+      <div class="input-field col s6">
+          <input id="" type="number" class="validate ch" ng-model="cantidad" placeholder="Cantidad">
+          
+        </div>
+      <p><a style="cursor:pointer"  ng-click="agregar(x.id, $index)">Seleccionar</a></p>
+    </div>
+    <div class="card-reveal">
+      <span class="card-title grey-text text-darken-4">{{x.nombre}}<i class="material-icons right">close</i></span>
+      <p>{{x.descripcion}}</p>
+    </div>
+  </div>
+</div>
+<button ng-if="servicios[0].id > 0" class="waves-effect waves-light btn-small" ng-click="go()">Procesar</button>
+</main>
+<div id="contServ" ng-if="contServ > 0" ng-repeat="x in arrHab">
+  Servicios seleccionados: {{contServ}}
+</div>
+</body>
+<script>
+
+window.csrf_token = "{{ csrf_token }}";
+
+
+var app = angular.module("myApp", []);
+
+app.controller("myCtrl", function($scope, $http) {
+ 
+  $scope.buscaHabitacion = function(){
+    $http({
+      method: 'POST',
+      url: 'api/consultarHospedajePorHabitacion', 
+      data: { hab: $scope.habitacion }
+      }).then(function (response) {
+        $scope.mdatos = response.data[0];
+        if($scope.mdatos == ''){
+          $scope.hab = [];
+        alert("No hay habitación");
+        return;
+      }
+      $scope.listaServicios();
+        //var resv = $scope.mdatos[0].codigo;
+        //$scope.listaHabitaciones(resv);
+    }, function (error) {
+    });
+  }
+
+  $scope.listaServicios = function(resv){
+    $http({
+      method: 'GET',
+      url: 'api/listaServicios'
+      }).then(function (response) {
+        $scope.servicios = response.data;
+        
+    }, function (error) {
+    });
+    
+  }
+
+   $scope.go = function(){
+    //$scope.checkIn();
+    //$scope.checkInDetalle();
+    for(var i =0; i<$scope.arrHab.length; i++){
+      //console.log($scope.arrHab[i]);
+      $scope.servicioHabitacion($scope.arrHab[i].servicio,$scope.arrHab[i].cantidad,$scope.arrHab[i].habitacion,$scope.arrHab[i].reserva);
+    }
+    location.reload();
+
+}
+  $scope.arrHab = [];
+  $scope.agregar = function(serv, i){
+    var ch = document.querySelectorAll(".ch");
+    //arreglo detalle hospedaje
+    $scope.arrHab.push({
+      "reserva" : $scope.mdatos[0].codigo,
+      "habitacion" : $scope.mdatos[0].habitacion,
+      "cantidad" : ch[i].value,
+      "servicio": serv
+    });
+    //console.log($scope.arrHab);
+    $scope.contServ = $scope.arrHab.length;
+  }
+
+  $scope.servicioHabitacion = function(a,b,c,d){
+   $http({
+      method: 'POST',
+      url: 'api/servicioHabitacion', 
+      data:  { ser: a ,can: b, hab: c, res: d }
+      //data:  { resv: 'R000001' ,desde: $scope.desde, hasta: $scope.hasta, tipo: $scope.arrHab[0].tipo, cantidad: $scope.arrHab[0].cantidad }
+      }).then(function (response) {
+    }, function (error) {
+    });
+    
+  }
+
+});
+
+
+/*
+$scope.go = function(){
+  for(var i; i<arrHab.length; i++){
+    $scope.reservaHabitacion($scope.desde,$scope.hasta,$scope.arrHab[i].tipo,scope.arrHab[i].cantidad);
+  }
+}
+*/
+
+</script>
+<style>
+main{
+  padding: 1em;
+}
+main{
+}
+section{
+}
+section form{
+  width: 300px;
+}
+.card{
+  width: 100%;
+}
+.galeria{
+  display: flex;
+  flex-flow: wrap;
+  justify-content: space-between;
+}
+#contServ{
+ background-color:#ddd;
+    position: fixed;
+    padding: 2em;
+    left: 69%;
+    top: 10%;
+    z-index: 1;
+
+}
+@media only screen and (min-width: 644px) {
+  section{
+    display: flex;
+  }
+  .card{
+  width: 300px;
+}
+}
+</style>
+</html>

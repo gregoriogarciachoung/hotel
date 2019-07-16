@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="iso-8859-1">
+<meta name="description" content="Ejemplo de HTML5">
+<meta name="keywords" content="HTML5, CSS3, JavaScript">
+<title></title>
+<!-- Compiled and minified CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+<header>
+<nav></nav>
+</header>
+<main>
+<form class="col s12">
+<div class="row">
+        <div class="input-field col s6">
+          <input id="dni" type="text" class="validate" ng-model="dni">
+          <label for="dni">DNI</label>
+        </div>
+      </div>
+	<button ng-click="go()"  class="waves-effect waves-light btn-small">buscar</button>
+</form>
+
+      <ul ng-if="mdatos != null " ng-repeat="x in mdatos">
+	<li>Cliente: {{x.cliente}}</li>
+	<li>Nombre: {{x.nombreCompleto}}</li>
+	<li>Desde: {{x.fechaInicio}}</li>
+	<li>Hasta {{x.fechaFin}}</li>
+</ul>
+ <table>
+    <thead>
+      <tr ng-if="mdatos != null ">
+        <td>Habitación N°</td><td>Tipo</td><td>Precio</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="x in hab">
+        <td>{{x.numHabitacion}}</td><td>{{x.nombre}}</td><td>{{x.precio}}</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+<script>
+
+window.csrf_token = "{{ csrf_token }}";
+
+
+var app = angular.module("myApp", []);
+
+app.controller("myCtrl", function($scope, $http) {
+ 
+  $scope.buscaReserva = function(){
+    $http({
+      method: 'POST',
+      url: 'api/verReservaPorDni', 
+      data: { dni: $scope.dni }
+      }).then(function (response) {
+      	$scope.mdatos = response.data[0];
+        if($scope.mdatos == ''){
+        alert("No hay reserva");
+      }
+        var resv = $scope.mdatos[0].codigo;
+        $scope.listaHabitaciones(resv);
+    }, function (error) {
+    });
+  }
+
+  $scope.listaHabitaciones = function(resv){
+    $http({
+      method: 'POST',
+      url: 'api/listarHabitacionesPorReserva2', 
+      data: { res: resv }
+      }).then(function (response) {
+      	$scope.hab = response.data[0];
+        
+    }, function (error) {
+    });
+    
+  }
+
+   $scope.go = function(){
+    $scope.buscaReserva();
+    //$scope.listaHabitaciones();
+}
+});
+
+
+/*
+$scope.go = function(){
+  for(var i; i<arrHab.length; i++){
+    $scope.reservaHabitacion($scope.desde,$scope.hasta,$scope.arrHab[i].tipo,scope.arrHab[i].cantidad);
+  }
+}
+*/
+
+</script>
+<style>
+main{
+  padding: 1em;
+}
+main{
+  width: 70%;
+}
+nav{
+background: rgba(255,255,255,0);
+}
+
+</style>
+</html>

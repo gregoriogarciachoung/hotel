@@ -1,0 +1,12 @@
+.login{
+width:50%;
+margin:0 auto !important;
+padding:2em;
+margin-top:4em !important;
+}
+.login button{
+padding-left:3em;
+padding-right:3em;
+background:#fff;
+color:#000;
+}
